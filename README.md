@@ -47,6 +47,8 @@ https://arxiv.org/pdf/1907.09837v2.pdf
 
 1st Approach: 
 
+
+
 Based on the paper, our project will implement a model consisting of 4 main components: a low-level features network, a mid-level features network, a global features network, and a colorization network. We will use VGG16 network for Classification Network
 
 From the paper: “First, a common set of shared low-level features are extracted from the image. Using these features, a set of global image features and mid-level image features are computed. Then, the midlevel and the global features are both fused by our proposed “fusion layer” and used as the input to a colorization network that outputs the final chrominance map”
@@ -64,6 +66,7 @@ Backpropagate the loss through all the networks(global features, mid-level featu
 
 2nd Approach:
 
+![alt text](https://raw.githubusercontent.com/pvitoria/ChromaGAN/master/Figures/ColorizationModel.png)
  
 The picture above shows the architecture for the second approach. The GAN architecture contains two sub architecture:
 Generator architecture, this architecture is composed of two subnetworks. The first subnetwork (composed by the yellow, purple red and blue part)  will output the crominance of the image, and the second one (composed by the yellow, red and grey part) will output the class distribution vector. As it can be seen the two subnetworks share some modules.
