@@ -86,39 +86,75 @@ def knn_fit(dt_dict, *args, **kwargs):
     neigh.fit(tranform_images, dt_dict['y'])
 
     return neigh
-def knn_predict(img, knn_model):
-    '''Make predictions'''
 
-    return knn_model.predict(img)
 
 
 def process_data():
     train_img, test_img = split_test('data/val_256', 0.2)
     model_classification = load_model('models/my_model_colorization.h5')
+
+    ## Train dataset
     chunk_size = 100
     transformed_image_list = list()
     classification_labels_list = list()
-    # stop_index = len(train_img)
-    stop_index = 200
+    filename_list = list()
+    stop_index = len(train_img)
+    # stop_index = 1000
     for i in range(0,stop_index , chunk_size):
         chunk = train_img[i:i + chunk_size]
-        batch, labels, filelist = import_images(chunk, 'data/val_256',1)
+        batch, labels, filelist = import_images(chunk, 'data/val_256')
         classification_labels = label_images(filelist)
         tranform_images = transform_image(batch, model_classification)
         classification_labels_list.extend(classification_labels.category_labels.values)
         transformed_image_list.extend(tranform_images)
-    output_dict = {'X': transformed_image_list, 'y': classification_labels_list, 'train_img':train_img, 'test_img':test_img}
-    with open('data/d_image_processed_knn.pkl', 'wb') as f:
+        filename_list.extend(filelist)
+    output_dict = {'X': transformed_image_list, 'y': classification_labels_list, 'train_img':filename_list}
+    with open('data/d_image_processed_knn_train.pkl', 'wb') as f:
         pickle.dump(output_dict, f)
 
-def run_knn():
-    with open('data/d_image_processed_knn.pkl', 'rb') as f:
-        dict_var = pickle.load(f)
-    knn_fit(dict_var, n_neighbors=3)
 
+    ## Test dataset
+
+    transformed_image_list = list()
+    classification_labels_list = list()
+    filename_list = list()
+    stop_index = len(test_img)
+    # stop_index = 200
+
+    for i in range(0,stop_index , chunk_size):
+        chunk = test_img[i:i + chunk_size]
+        batch, labels, filelist = import_images(chunk, 'data/val_256')
+        classification_labels = label_images(filelist)
+        tranform_images = transform_image(batch, model_classification)
+        classification_labels_list.extend(classification_labels.category_labels.values)
+        transformed_image_list.extend(tranform_images)
+        filename_list.extend(filelist)
+    output_dict = {'X': transformed_image_list, 'y': classification_labels_list, 'test_img':filename_list}
+    with open('data/d_image_processed_knn_test.pkl', 'wb') as f:
+        pickle.dump(output_dict, f)
+
+
+def run_knn(*args, **kwargs):
+    with open('data/d_image_processed_knn_train.pkl', 'rb') as f:
+        dict_var = pickle.load(f)
+    model_knn = knn_fit(dict_var, *args, **kwargs)
+    return model_knn
+
+def knn_predict(knn_model):
+    '''Make predictions'''
+    with open('data/d_image_processed_knn_test.pkl', 'rb') as f:
+        dt_dict = pickle.load(f)
+    tranform_images = np.asarray(dt_dict['X'])
+    tranform_images = tranform_images.reshape((tranform_images.shape[0],tranform_images.shape[2]))
+    # predictions = knn_model.predict(tranform_images)
+    knn_model.score(tranform_images, dt_dict['y'])
+
+
+    return 5
 
 if __name__ == '__main__':
     import os
     os.chdir('..')
-    # process_data()
-    run_knn()
+    process_data()
+    knn_model = run_knn(n_neighbors=10)
+    knn_predict(knn_model)
