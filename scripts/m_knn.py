@@ -147,7 +147,7 @@ def knn_predict(knn_model):
     tranform_images = np.asarray(dt_dict['X'])
     tranform_images = tranform_images.reshape((tranform_images.shape[0],tranform_images.shape[2]))
     # predictions = knn_model.predict(tranform_images)
-    knn_model.score(tranform_images, dt_dict['y'])
+    knn_model.score(tranform_images[300:305,], dt_dict['y'][300:305])
 
 
     return 5
@@ -155,6 +155,6 @@ def knn_predict(knn_model):
 if __name__ == '__main__':
     import os
     os.chdir('..')
-    process_data()
-    knn_model = run_knn(n_neighbors=10)
+    # process_data()
+    knn_model = run_knn(n_neighbors=5)
     knn_predict(knn_model)
