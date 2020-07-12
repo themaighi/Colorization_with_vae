@@ -3,9 +3,7 @@ import numpy as np
 import cv2
 from keras.models import load_model
 import tensorflow as tf
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import pickle
 
 
@@ -78,7 +76,6 @@ def transform_image(batch_images, model_classification):
     # np.asarray(batch_images)/255
     # transformed_images = model_classification.predict(np.tile(np.asarray(batch_images) / 255, [1, 1, 1, 3]))
     return transformed_images
-
 
 
 def process_data():
