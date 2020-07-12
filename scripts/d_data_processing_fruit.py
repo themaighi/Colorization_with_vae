@@ -87,12 +87,18 @@ def process_data(path):
         classification_labels_list.append(i)
         transformed_images.append(tranform_images)
 
-    output_dict = {'X': black_with_image, 'y': classification_labels_list, 'filename':image_list,
-                   'real_img': actual_image_list, 'color_image': color_image, 'knn_input': transformed_images}
+    output_dict_knn = {'X': transformed_images, 'y': classification_labels_list, 'filename':image_list}
+    output_dict_real_img = {'real_img': actual_image_list, 'y': classification_labels_list, 'filename': image_list}
+    output_dict_colorization = {'X': black_with_image, 'y': color_image, 'filename':image_list}
+
 
     train_or_test = os.path.basename(path)
-    with open('data/processed_fruit_images_' + train_or_test + '.pkl', 'wb') as f:
-        pickle.dump(output_dict, f)
+    with open('data/processed_fruit_images_knn' + train_or_test + '.pkl', 'wb') as f:
+        pickle.dump(output_dict_knn, f)
+    with open('data/processed_fruit_images_real' + train_or_test + '.pkl', 'wb') as f:
+        pickle.dump(output_dict_real_img, f)
+    with open('data/processed_fruit_images_colorization' + train_or_test + '.pkl', 'wb') as f:
+        pickle.dump(output_dict_colorization, f)
 
 
 
