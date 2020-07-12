@@ -78,14 +78,14 @@ def process_data(path):
 
     for i in labels_images: # i = labels_images[0]
         print(i)
-        image_list = os.listdir(path + '/' + i)
+        image_list = os.listdir(path + '/' + i)[:10]
         batch, labels, filelist, actual_image = import_images(image_list, path + '/' + i)
         tranform_images = transform_image(batch, model_classification)
-        actual_image_list.append(actual_image)
-        black_with_image.append(batch)
-        color_image.append(labels)
-        classification_labels_list.append(i)
-        transformed_images.append(tranform_images)
+        actual_image_list.extend(actual_image)
+        black_with_image.extend(batch)
+        color_image.extend(labels)
+        classification_labels_list.extend([i] * len(image_list))
+        transformed_images.extend(tranform_images)
 
     output_dict_knn = {'X': transformed_images, 'y': classification_labels_list, 'filename':image_list}
     output_dict_real_img = {'real_img': actual_image_list, 'y': classification_labels_list, 'filename': image_list}
