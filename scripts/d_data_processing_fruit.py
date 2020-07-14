@@ -19,7 +19,7 @@ def read_img(filename, img_size):
     height, width, channels = img.shape
     min_hw = int(min(height, width) / 2)
     img = img[int(height / 2) - min_hw:int(height / 2) + min_hw, int(width / 2) - min_hw:int(width / 2) + min_hw, :]
-    labimg = cv2.cvtColor(cv2.resize(img, (img_size, img_size)), cv2.COLOR_BGR2Lab)
+    labimg = cv2.cvtColor(cv2.resize(img, (img_size, img_size)), 1)
     return np.reshape(labimg[:, :, 0], (img_size, img_size, 1)), labimg[:, :, 1:], img
 
 
