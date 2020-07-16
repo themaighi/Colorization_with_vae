@@ -70,9 +70,16 @@ def transform_image(batch_images, model_classification):
 def process_data(path):
     labels_images = os.listdir(path)
     model_classification = load_model('models/my_model_colorization.h5')
+    train_or_test = os.path.basename(path)
 
+    os.makedirs('data/fruit/' + train_or_test + '/knn/', exist_ok=True)
+    os.makedirs('data/fruit/' + train_or_test + '/real/', exist_ok=True)
+    os.makedirs('data/fruit/' + train_or_test + '/colorization/', exist_ok=True)
 
-    for i in labels_images: # i = labels_images[0]
+    labels_already_processed = [i.split('_')[-1].split('.')[0] for i in os.listdir('data/fruit/' + train_or_test + '/knn/')]
+    labels_to_process = list(set(labels_images) - set(labels_already_processed))
+
+    for i in labels_to_process: # i = labels_images[0]
         print(i)
         actual_image_list = list()
         classification_labels_list = list()
@@ -93,11 +100,6 @@ def process_data(path):
         output_dict_real_img = {'real_img': actual_image_list, 'y': classification_labels_list, 'filename': image_list}
         output_dict_colorization = {'X': black_with_image, 'y': color_image, 'filename': image_list}
 
-        train_or_test = os.path.basename(path)
-
-        os.makedirs('data/fruit/' + train_or_test + '/knn/' , exist_ok=True)
-        os.makedirs('data/fruit/' + train_or_test + '/real/' , exist_ok=True)
-        os.makedirs('data/fruit/' + train_or_test + '/colorization/', exist_ok=True)
 
         with open('data/fruit/' + train_or_test + '/knn/processed_fruit_images_knn_' + i + '.pkl', 'wb') as f:
             pickle.dump(output_dict_knn, f)
