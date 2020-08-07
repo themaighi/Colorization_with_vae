@@ -36,18 +36,22 @@ def vae_model(img_shape = (224,224,3), latent_dim=10):
     x = tf.keras.layers.Reshape((56, 56, 12))(x)
     x = tf.keras.layers.Conv2DTranspose(18, 3, activation="relu", strides=2, padding="same")(x)
     x = tf.keras.layers.Conv2DTranspose(24, 3, activation="relu", strides=2, padding="same")(x)
-    decoder_outputs = tf.keras.layers.Conv2DTranspose(3, 3, activation="sigmoid", padding="same")(x)
+    decoder_outputs = tf.keras.layers.Conv2DTranspose(2, 3, activation="sigmoid", padding="same")(x)
     vae = tf.keras.Model(input_img, decoder_outputs, name="vae")
     vae.summary()
 
     return vae
 
 
-def load_data():
-    with open('data/processed_fruit_images_colorizationTest.pkl', 'rb') as f:
-        output_dict_colorization = pickle.load(f)
-    with open('data/processed_fruit_images_realTest.pkl', 'rb') as f:
-        output_real = pickle.load(f)
+def load_data(prop = 0.2):
+    list_files = os.listdir('data/fruit/Test/colorization')
+    x_test = []
+    y_test = []
+    for i in list_files: # i = list_files[0]
+        with open('data/fruit/Test/colorization/' + i, 'rb') as f:
+            image_dict = pickle.load(f)
+        x_test.extend(image_dict['X'])
+        y_test.extend(image_dict['y'])
 
     x_train = np.asarray(output_dict_colorization['X'])
     y_train = np.concatenate([x_train, np.asarray(output_dict_colorization['y'])], axis=3)
