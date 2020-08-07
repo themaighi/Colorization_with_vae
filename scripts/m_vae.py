@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import random
 import cv2
 from keras.models import load_model
 import tensorflow as tf
@@ -45,18 +46,34 @@ def vae_model(img_shape = (224,224,3), latent_dim=10):
 
 def load_data(prop = 0.2):
     list_files = os.listdir('data/fruit/Test/colorization')
+
     x_test = []
     y_test = []
     for i in list_files: # i = list_files[0]
         with open('data/fruit/Test/colorization/' + i, 'rb') as f:
             image_dict = pickle.load(f)
-        x_test.extend(image_dict['X'])
-        y_test.extend(image_dict['y'])
+        x_test.extend(random.sample(image_dict['X'], int(np.ceil(len(image_dict['X']) * prop))))
+        y_test.extend(random.sample(image_dict['y'], int(np.ceil(len(image_dict['y']) * prop))))
 
-    x_train = np.asarray(output_dict_colorization['X'])
-    y_train = np.concatenate([x_train, np.asarray(output_dict_colorization['y'])], axis=3)
+    x_test = np.asarray(x_test)
+    y_test = np.concatenate([x_test, y_test], axis=3)
 
-    return x_train, y_train
+    list_files = os.listdir('data/fruit/Training/colorization')
+    x_train_all = []
+    y_train_all = []
+    for i in list_files: # i = list_files[0]
+        with open('data/fruit/Training/colorization/' + i, 'rb') as f:
+            image_dict = pickle.load(f)
+        x_train_all.extend(random.sample(image_dict['X'], int(np.ceil(len(image_dict['X']) * prop))))
+        y_train_all.extend(random.sample(image_dict['y'], int(np.ceil(len(image_dict['y']) * prop))))
+
+
+    x_train = np.asarray(x_train_all)
+    y_train = np.concatenate([x_train, y_train_all], axis=3)
+
+    x_train, y_train, x_val, y_val = train_test_split(x_train, y_train, test_size=0.2)
+
+    return x_train, y_train, x_val, y_val, x_test, y_test
 
 def train(model, x_train, y_train):
     # Q(z|X) -- encoder
