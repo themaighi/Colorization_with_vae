@@ -4,5 +4,6 @@ keras==2.2.4
 tensorflow==2.2.0
 sklearn
 pandas
+matplotlib
 
 
