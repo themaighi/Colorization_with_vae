@@ -54,12 +54,12 @@ def process_data_for_knn_on_semantic_distribution(path):
 
     ## Test images
 
-    list_images = os.listdir(path + 'Test/real')
+    list_images = os.listdir(path + 'Test/knn')
     label_general_test = []
     label_specific_test = []
     images_test = []
     for img_label in list_images:  # img_label = list_images[0]
-        file_read = pd.read_pickle(path + 'Test/real/' + img_label)
+        file_read = pd.read_pickle(path + 'Test/knn/' + img_label)
         images_test.extend([i for i in file_read['X']])
         label_general_test.extend([lab.split(' ')[0] for lab in file_read['y']])
         label_specific_test.extend(file_read['y'])
