@@ -2,9 +2,6 @@ import pandas as pd
 import numpy as np
 import cv2
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from sklearn.model_selection import train_test_split
-import pickle
 import time
 import random
 from keras.applications.vgg16 import decode_predictions
@@ -123,52 +120,58 @@ if __name__ == '__main__':
     images_train_semantic, label_general_train_semantic, label_specific_train_semantic,\
     images_test_semantic, label_general_test_semantic, label_specific_test_semantic = process_data_for_knn_on_semantic_distribution('data/fruit/')
 
+    list_images = os.listdir('data/fruit/' + 'Test/real')
+    images_real = []
+    for img_label in list_images:  # img_label = list_images[0]
+        file_read = pd.read_pickle('data/fruit/' + 'Test/real/' + img_label)
+        images_real.extend([i for i in file_read['real_img']])
+
+    prop = 0.1
+    mask_score = random.sample(range(len(images_test_real)), int(np.ceil(len(images_test_real) * prop)))
+    mask_prediction = random.sample(range(len(images_test_real)), 15)
+    metrics_total = pd.DataFrame()
 
     for k in range(1,10):
         print('-------- Running model with ', k, 'neighbours -------')
         neigh_real_general, neigh_real_detailed,\
         neigh_semantic_general, neigh_semantic_detailed = estimate_knn_models(images_train_real,label_specific_train_real, label_general_train_real,
-                            images_train_semantic, label_specific_train_semantic, label_general_train_semantic)
+                            images_train_semantic, label_specific_train_semantic, label_general_train_semantic, n_neighbors=k)
         # neigh_real_general = estimate_knn_models(images_train_real, label_specific_train_real, label_general_train_real,
         #                                           images_train_semantic, label_specific_train_semantic, label_general_train_semantic)
 
         ## Calculate score KNN
-        # prop = 0.1
-        # mask = random.sample(range(len(images_test_real)), int(np.ceil(len(images_test_real) * prop)))
+
         #
-        # score_real_general = metrics_calculation(neigh_real_general, [images_test_real[i] for i in mask], [label_general_test_real[i] for i in mask])
-        # score_real_detailed = metrics_calculation(neigh_real_detailed, [images_test_real[i] for i in mask],
-        #                                          [label_specific_train_real[i] for i in mask])
-        # score_semantic_general = metrics_calculation(neigh_semantic_general, [images_test_semantic[i] for i in mask],
-        #                                          [label_general_test_semantic[i] for i in mask])
-        # score_semantic_detailed = metrics_calculation(neigh_semantic_detailed, [images_test_semantic[i] for i in mask],
-        #                                          [label_specific_test_semantic[i] for i in mask])
+        score_real_general = metrics_calculation(neigh_real_general, [images_test_real[i] for i in mask_score],
+                                                 [label_general_test_real[i] for i in mask_score])
+        score_real_detailed = metrics_calculation(neigh_real_detailed, [images_test_real[i] for i in mask_score],
+                                                 [label_specific_test_real[i] for i in mask_score])
+        score_semantic_general = metrics_calculation(neigh_semantic_general, [images_test_semantic[i] for i in mask_score],
+                                                 [label_general_test_semantic[i] for i in mask_score])
+        score_semantic_detailed = metrics_calculation(neigh_semantic_detailed, [images_test_semantic[i] for i in mask_score],
+                                                 [label_specific_test_semantic[i] for i in mask_score])
+        metrics_total = metrics_total.append(pd.DataFrame({'k':k, 'score_model1': score_real_general,
+                                           'score_model2': score_real_detailed, 'score_model3': score_semantic_general,
+                                           'score_model4': score_semantic_detailed}, index=[0])).reset_index(drop=True)
+        print('List of scores \n', metrics_total)
 
         ## Make predictions
 
 
-        mask = random.sample(range(len(images_test_real)), 15)
-
-        prediction_real_general = print_predicted_label(neigh_real_general, [images_test_real[i] for i in mask])
-        prediction_real_detailed = print_predicted_label(neigh_real_detailed, [images_test_real[i] for i in mask])
-        prediction_semantic_general = print_predicted_label(neigh_semantic_general, [images_test_semantic[i] for i in mask])
-        prediction_semantic_detailed = print_predicted_label(neigh_semantic_detailed, [images_test_semantic[i] for i in mask])
+        prediction_real_general = print_predicted_label(neigh_real_general, [images_test_real[i] for i in mask_prediction])
+        prediction_real_detailed = print_predicted_label(neigh_real_detailed, [images_test_real[i] for i in mask_prediction])
+        prediction_semantic_general = print_predicted_label(neigh_semantic_general, [images_test_semantic[i] for i in mask_prediction])
+        prediction_semantic_detailed = print_predicted_label(neigh_semantic_detailed, [images_test_semantic[i] for i in mask_prediction])
 
         ## Prediction with colorization model
 
-        chroma_gan_predictons = decode_predictions(np.asarray([images_test_semantic[i] for i in mask]))
+        chroma_gan_predictons = decode_predictions(np.asarray([images_test_semantic[i] for i in mask_prediction]))
         chroma_gan_predictons = [i[0][1] for i in chroma_gan_predictons]
         ## Create a plot with predicted labels, real labels and real image
 
 
-        list_images = os.listdir('data/fruit/' + 'Test/real')
-        images_real = []
-        for img_label in list_images:  # img_label = list_images[0]
-            file_read = pd.read_pickle('data/fruit/' + 'Test/real/' + img_label)
-            images_real.extend([i for i in file_read['real_img']])
-
-        img_real_plot = [images_real[i] for i in mask]
-        labels_img = [label_specific_test_real[i] for i in mask]
+        img_real_plot = [images_real[i] for i in mask_prediction]
+        labels_img = [label_specific_test_real[i] for i in mask_prediction]
         n_rows = 3
         n_cols = 5
         plt.figure(figsize=(n_cols * 1.4, n_rows * 1.6), )
@@ -190,6 +193,7 @@ if __name__ == '__main__':
         os.makedirs('results/fruit/knn/', exist_ok=True)
         plt.savefig('results/fruit/knn/' + 'prediction_k' + str(k) + '.png')
 
+    metrics_total.to_csv('results/fruit/knn/score_dt.csv', index=False)
 
 
 
