@@ -5,6 +5,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.model_selection import train_test_split
 import pickle
+import time
+import random
+from keras.applications.vgg16 import decode_predictions
+import matplotlib.pyplot as plt
 
 
 ## Create the KNN model from simple picture
@@ -20,7 +24,7 @@ def process_data_for_knn_on_pictures(path):
     images_train = []
     for img_label in list_images: #img_label = list_images[0]
         file_read = pd.read_pickle(path + 'Training/real/' + img_label)
-        images_train.extend([cv2.resize(i/255, (32, 32))[:,:,0] for i in file_read['real_img']])
+        images_train.extend([cv2.resize(i/255, (32, 32))[:,:,0].flatten() for i in file_read['real_img']])
         label_general_train.extend([lab.split(' ')[0] for lab in file_read['y']])
         label_specific_train.extend(file_read['y'])
 
@@ -32,7 +36,7 @@ def process_data_for_knn_on_pictures(path):
     images_test = []
     for img_label in list_images: #img_label = list_images[0]
         file_read = pd.read_pickle(path + 'Test/real/' + img_label)
-        images_test.extend([cv2.resize(i/255, (32, 32))[:,:,0] for i in file_read['real_img']])
+        images_test.extend([cv2.resize(i/255, (32, 32))[:,:,0].flatten() for i in file_read['real_img']])
         label_general_test.extend([lab.split(' ')[0] for lab in file_read['y']])
         label_specific_test.extend(file_read['y'])
 
@@ -48,7 +52,7 @@ def process_data_for_knn_on_semantic_distribution(path):
     images_train = []
     for img_label in list_images:  # img_label = list_images[0]
         file_read = pd.read_pickle(path + 'Training/knn/' + img_label)
-        images_train.extend([i for i in file_read['X']])
+        images_train.extend([i.flatten() for i in file_read['X']])
         label_general_train.extend([lab.split(' ')[0] for lab in file_read['y']])
         label_specific_train.extend(file_read['y'])
 
@@ -60,65 +64,56 @@ def process_data_for_knn_on_semantic_distribution(path):
     images_test = []
     for img_label in list_images:  # img_label = list_images[0]
         file_read = pd.read_pickle(path + 'Test/knn/' + img_label)
-        images_test.extend([i for i in file_read['X']])
+        images_test.extend([i.flatten() for i in file_read['X']])
         label_general_test.extend([lab.split(' ')[0] for lab in file_read['y']])
         label_specific_test.extend(file_read['y'])
 
     return images_train, label_general_train, label_specific_train, images_test, label_general_test, label_specific_test
 
+def knn_model(X,y, *args, **kwargs):
+    model = KNeighborsClassifier(*args, **kwargs)
+    return model.fit(X, y)
+
 def estimate_knn_models(train_real, label_real_detailed, label_real_general,
-                        train_semantic, label_semantic_detailed, label_smantic_general):
+                        train_semantic, label_semantic_detailed, label_smantic_general,
+                        *args, **kwargs):
 
-    return 5
 
-def predict_subset_of_test():
-    return 5
+    time_before = time.time()
+    neigh_real_general = knn_model(train_real, label_real_general, *args, **kwargs)
+    time_after = time.time()
+    print('----- Estimation process taken Real general: ', str(time_after - time_before))
+    time_before = time.time()
+    neigh_real_detailed = knn_model(train_real, label_real_detailed, *args, **kwargs)
+    time_after = time.time()
+    print('----- Estimation process taken Real detailed: ', str(time_after - time_before))
+    time_before = time.time()
+    neigh_semantic_general = knn_model(train_semantic, label_smantic_general, *args, **kwargs)
+    time_after = time.time()
+    print('----- Estimation process taken Semantic General: ', str(time_after - time_before))
+    time_before = time.time()
+    neigh_semantic_detailed = knn_model(train_semantic, label_semantic_detailed, *args, **kwargs)
+    time_after = time.time()
+    print('----- Estimation process taken Semantic Real: ', str(time_after - time_before))
+    return neigh_real_general, neigh_real_detailed, neigh_semantic_general, neigh_semantic_detailed
+    # return neigh_real_general
 
-def process_data_model_layer1():
-    with open('data/processed_fruit_images_knnTraining.pkl', 'rb') as f:
-        dict_var = pickle.load(f)
-    ## Train
-    tranform_images = np.asarray(dict_var['X'])
-    tranform_images = tranform_images.reshape((tranform_images.shape[0],tranform_images.shape[2]))
-    trans = MinMaxScaler()
-    trans.fit(tranform_images)
-    tranform_images_train = trans.transform(tranform_images)
-    # list_of_lists = [[i.split(' ')[0]] * 10 for i in dict_var['y']]
-    labels = dict_var['y']
-    # labels = sum(list_of_lists, [])
-    lab_trans = LabelEncoder()
-    lab_trans.fit(labels)
-    labels_train = lab_trans.transform(labels)
+def metrics_calculation(model, X_test, y_test):
 
-    ## Test
+    time_before = time.time()
+    score_prediction = model.score(X_test, y_test)
+    time_after = time.time()
+    print('----- Estimation process time prediction: ', str(time_after - time_before))
 
-    with open('data/processed_fruit_images_knnTest.pkl', 'rb') as f:
-        dict_var = pickle.load(f)
+    return score_prediction
 
-    tranform_images = np.asarray(dict_var['X'])
-    tranform_images =  tranform_images.reshape((tranform_images.shape[0],tranform_images.shape[2]))
-    tranform_images_test = trans.transform(tranform_images)
-    # list_of_lists = [[i.split(' ')[0]] * 10 for i in dict_var['y']]
-    # list_of_lists = [[i] * 10 for i in dict_var['y']]
-    labels = dict_var['y']
-    labels_test = lab_trans.transform(labels)
+def print_predicted_label(model, X_test):
+    time_before = time.time()
+    predicted_labels = model.predict(X_test)
+    time_after = time.time()
+    print('----- Estimation process time prediction: ', str(time_after - time_before))
+    return predicted_labels
 
-    return tranform_images_train, tranform_images_test, labels_train, labels_test, lab_trans
-
-def train_knn_layer1(train_img, labels_img, *args, **kwargs):
-
-    neigh = KNeighborsClassifier(*args, **kwargs)
-    image_train, valid_img,labels_train, valid_labels= train_test_split(train_img, labels_img, test_size=0.2)
-    neigh.fit(image_train, labels_train)
-    neigh.score(valid_img, valid_labels)
-
-    return neigh
-
-def knn_predict(test_img, labels_test, knn_model):
-    '''Make predictions'''
-    knn_model.score(test_img, labels_test)
-
-    return 5
 if __name__ == '__main__':
     import os
     os.chdir('..')
@@ -128,10 +123,75 @@ if __name__ == '__main__':
     images_train_semantic, label_general_train_semantic, label_specific_train_semantic,\
     images_test_semantic, label_general_test_semantic, label_specific_test_semantic = process_data_for_knn_on_semantic_distribution('data/fruit/')
 
-    estimate_knn_models(images_train_real,label_specific_train_real, label_general_train_real,
-                        images_train_semantic, label_specific_train_semantic, label_general_train_semantic)
 
-    tranform_images_train, tranform_images_test, labels_train, labels_test, lab_trans = process_data_model_layer1()
-    knn_model = train_knn_layer1(tranform_images_train,labels_train, n_neighbors=2)
-    knn_predict(tranform_images_test, labels_test, knn_model)
-    # knn_predict_layer1(model_knn_layer1)
+    for k in range(1,10):
+        print('-------- Running model with ', k, 'neighbours -------')
+        neigh_real_general, neigh_real_detailed,\
+        neigh_semantic_general, neigh_semantic_detailed = estimate_knn_models(images_train_real,label_specific_train_real, label_general_train_real,
+                            images_train_semantic, label_specific_train_semantic, label_general_train_semantic)
+        # neigh_real_general = estimate_knn_models(images_train_real, label_specific_train_real, label_general_train_real,
+        #                                           images_train_semantic, label_specific_train_semantic, label_general_train_semantic)
+
+        ## Calculate score KNN
+        # prop = 0.1
+        # mask = random.sample(range(len(images_test_real)), int(np.ceil(len(images_test_real) * prop)))
+        #
+        # score_real_general = metrics_calculation(neigh_real_general, [images_test_real[i] for i in mask], [label_general_test_real[i] for i in mask])
+        # score_real_detailed = metrics_calculation(neigh_real_detailed, [images_test_real[i] for i in mask],
+        #                                          [label_specific_train_real[i] for i in mask])
+        # score_semantic_general = metrics_calculation(neigh_semantic_general, [images_test_semantic[i] for i in mask],
+        #                                          [label_general_test_semantic[i] for i in mask])
+        # score_semantic_detailed = metrics_calculation(neigh_semantic_detailed, [images_test_semantic[i] for i in mask],
+        #                                          [label_specific_test_semantic[i] for i in mask])
+
+        ## Make predictions
+
+
+        mask = random.sample(range(len(images_test_real)), 15)
+
+        prediction_real_general = print_predicted_label(neigh_real_general, [images_test_real[i] for i in mask])
+        prediction_real_detailed = print_predicted_label(neigh_real_detailed, [images_test_real[i] for i in mask])
+        prediction_semantic_general = print_predicted_label(neigh_semantic_general, [images_test_semantic[i] for i in mask])
+        prediction_semantic_detailed = print_predicted_label(neigh_semantic_detailed, [images_test_semantic[i] for i in mask])
+
+        ## Prediction with colorization model
+
+        chroma_gan_predictons = decode_predictions(np.asarray([images_test_semantic[i] for i in mask]))
+        chroma_gan_predictons = [i[0][1] for i in chroma_gan_predictons]
+        ## Create a plot with predicted labels, real labels and real image
+
+
+        list_images = os.listdir('data/fruit/' + 'Test/real')
+        images_real = []
+        for img_label in list_images:  # img_label = list_images[0]
+            file_read = pd.read_pickle('data/fruit/' + 'Test/real/' + img_label)
+            images_real.extend([i for i in file_read['real_img']])
+
+        img_real_plot = [images_real[i] for i in mask]
+        labels_img = [label_specific_test_real[i] for i in mask]
+        n_rows = 3
+        n_cols = 5
+        plt.figure(figsize=(n_cols * 1.4, n_rows * 1.6), )
+        for row in range(n_rows):
+            for col in range(n_cols):
+                index = n_cols * row + col
+                plt.subplot(n_rows, n_cols, index + 1)
+                image = cv2.cvtColor(img_real_plot[index], cv2.COLOR_BGR2RGB)
+                plt.imshow(image)
+                plt.axis('off')
+                plt.text(0.5,120, 'Real Label: ' + labels_img[index], ha='center', size=6)
+                plt.text(0.5, 135, 'Model 1: ' + prediction_real_general[index], ha='center', size=6)
+                plt.text(0.5, 150, 'Model 2: ' + prediction_real_detailed[index], ha='center', size=6)
+                plt.text(0.5, 165, 'Model 3: ' + prediction_semantic_general[index], ha='center', size=6)
+                plt.text(0.5, 180, 'Model 4: ' + prediction_semantic_detailed[index], ha='center', size=6)
+                plt.text(0.5, 195, 'ChromaGan: ' + chroma_gan_predictons[index], ha='center', size=6)
+
+        plt.tight_layout(pad=0.5)
+        os.makedirs('results/fruit/knn/', exist_ok=True)
+        plt.savefig('results/fruit/knn/' + 'prediction_k' + str(k) + '.png')
+
+
+
+
+
+
