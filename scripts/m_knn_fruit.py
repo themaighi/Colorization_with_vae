@@ -6,11 +6,8 @@ import time
 import random
 from keras.applications.vgg16 import decode_predictions
 import matplotlib.pyplot as plt
-
-
-## Create the KNN model from simple picture
-## Create KNN model from the semantic distribution
-## Predict with the compex model
+## Try to run the model on real images without scaling resizing the images
+## Try to run the model and test it on the whole test
 
 def process_data_for_knn_on_pictures(path):
 
