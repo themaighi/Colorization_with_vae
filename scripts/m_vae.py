@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 import pickle
 from tensorflow import keras
 import matplotlib.pyplot as plt
+# Add the labels in such a way that we are able to create the plot for the different scatter plots
 
 
 class Sampling(tf.keras.layers.Layer):
@@ -108,23 +109,6 @@ def train(model, x_train, y_train, x_val, y_val, encoder):
     # Q(z|X) -- encoder
 
 
-    ## Custom callbacks
-
-    class LossAndErrorPrintingCallback(tf.keras.callbacks.Callback):
-        def on_train_batch_end(self, batch, logs=None):
-            print("For batch {}, loss is {:7.2f}".format(batch, logs["loss"]))
-
-        def on_test_batch_end(self, batch, logs=None):
-            print("For batch {}, loss is {:7.2f}.".format(batch, logs["loss"]))
-
-        def on_epoch_end(self, epoch, logs=None):
-            print(
-                "The average loss for epoch {} is {:7.2f}, The average vaidation loss for epoch is {:7.2f}".format(
-                    epoch, logs["loss"], logs['val_loss']
-                )
-            )
-
-
     class PredictCallback(tf.keras.callbacks.Callback):
 
         def __init__(self, x_dt):
@@ -194,18 +178,46 @@ def train(model, x_train, y_train, x_val, y_val, encoder):
     # plt.colorbar()
     plt.show()
 
-    return model, history
+    return model, history, x_test_encoded, labels_encoder
 #
 # def predict(model, x_test, y_test):
 #     prediction_model = model.predict(x_test)
+
+def create_plots_paper():
+    list_directory = os.listdir('models/fruit/vae/results')
+    list_directory = [l for l in list_directory if '.' not in l]
+
+    img_select = [3, 20, 40]
+    img_print = list()
+    for i in img_select:
+        for l in list_directory:
+            images = os.listdir('models/fruit/vae/results/' + l)
+            images = [img for img in images if ('reconstructed' in img) | ('real' in img)]
+            read_images = cv2.imread('models/fruit/vae/results/' + l + '/' + images[i])
+            img_print.append(read_images)
+
+    n_rows = 3
+    n_cols = 11
+    plt.figure(figsize=(n_cols * 1.4, n_rows * 1.6))
+    for row in range(n_rows):
+        for col in range(n_cols):
+            index = n_cols * row + col
+            plt.subplot(n_rows, n_cols, index + 1)
+            image = cv2.cvtColor(img_print[index], cv2.COLOR_BGR2RGB)
+            plt.imshow(image)
+            plt.axis('off')
+
+    plt.savefig('models/fruit/vae/image_different_epochs.png')
+
+    return 5
 
 
 
 if __name__ == '__main__':
     import os
     os.chdir('..')
-    x_train, y_train, x_val, y_val, x_test, y_test = load_data()
-    model, encoder = vae_model()
-    train(model=model, x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val, encoder=encoder)
-
+    # x_train, y_train, x_val, y_val, x_test, y_test = load_data()
+    # model, encoder = vae_model(latent_dim=30)
+    # train(model=model, x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val, encoder=encoder)
+    create_plots_paper()
 
