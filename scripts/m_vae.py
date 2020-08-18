@@ -98,7 +98,7 @@ def load_data(prop = 0.3):
     x_test = np.asarray(x_test)
     y_test = np.concatenate([x_test, y_test], axis=3)
     y_test = [cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_Lab2BGR) for img in y_test]
-    x_test = [cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_Lab2BGR)[0,:,:] for img in y_test]
+    x_test = [img[:,:,0:1] for img in y_test]
 
     list_files = os.listdir('data/fruit/Training/colorization')
     x_train_all = []
