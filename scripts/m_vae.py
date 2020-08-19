@@ -143,7 +143,7 @@ def train(model, x_train, y_train, x_val, y_val):
             #     logs['epoch_prediction'] = list()
             logs['epoch_prediction'] = self.model.predict(np.tile(self.x_dt, [1,1,1,3])/255)
 
-    epochs_num = 1
+    epochs_num = 5
     batch_size_val = 30
     time_experiment = str(datetime.datetime.today()).replace(':', '').replace(' ', '_').split('.')[0]
 
@@ -219,7 +219,7 @@ def create_plots_paper(x_val, label_val, model_colorization, time_experiment, en
                 img_real = read_images
                 read_images = cv2.cvtColor(read_images.astype(np.uint8), cv2.COLOR_BGR2RGB)
             else:
-                read_images = read_images.astype(np.uint8)
+                read_images = cv2.cvtColor(read_images,cv2.COLOR_BGR2RGB)
             img_print.append(read_images)
 
 
@@ -228,9 +228,9 @@ def create_plots_paper(x_val, label_val, model_colorization, time_experiment, en
         prediction_img[0] = (np.where(prediction_img[0] > 255, 255, prediction_img[0])).astype(np.uint8)
 
         img_real_lab = cv2.cvtColor(img_real, cv2.COLOR_BGR2Lab)
-
-        img_print.append(cv2.cvtColor(np.concatenate([np.reshape(img_real_lab[:,:,0],(1, img_real_lab[:,:,0].shape[0],img_real_lab[:,:,0].shape[1], 1)),
-                                         prediction_img[0]], axis=3)[0,:,:,:].astype(np.uint8), cv2.COLOR_Lab2BGR))
+        img_prediction = cv2.cvtColor(np.concatenate([np.reshape(img_real_lab[:,:,0],(1, img_real_lab[:,:,0].shape[0],img_real_lab[:,:,0].shape[1], 1)),
+                                         prediction_img[0]], axis=3)[0,:,:,:].astype(np.uint8), cv2.COLOR_Lab2BGR)
+        img_print.append(cv2.cvtColor(img_prediction,cv2.COLOR_BGR2RGB))
 
 
     n_rows = len(img_select)
@@ -290,7 +290,7 @@ def create_plots_paper(x_val, label_val, model_colorization, time_experiment, en
             j * digit_size: (j + 1) * digit_size] = digit
 
     plt.figure(figsize=(10, 10))
-    plt.imshow(cv2.cvtColor(figure.astype(np.uint8), cv2.COLOR_Lab2BGR))
+    plt.imshow(cv2.cvtColor(figure.astype(np.uint8), cv2.COLOR_Lab2RGB))
 
     plt.savefig('models/fruit/vae/results/' + time_experiment + '/image_generator.png')
 
@@ -301,7 +301,7 @@ def create_plots_paper(x_val, label_val, model_colorization, time_experiment, en
 if __name__ == '__main__':
     import os
     os.chdir('..')
-    x_train, y_train, x_val, y_val, x_test, y_test, labels_train, labels_val = load_data(0.01)
+    x_train, y_train, x_val, y_val, x_test, y_test, labels_train, labels_val = load_data(0.2)
     model, encoder, generator, model_colorization = vae_model(latent_dim=64)
     model, history, time_experiment = train(model=model, x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val)
     create_plots_paper(x_val=x_val, label_val=labels_val, model_colorization=model_colorization,
