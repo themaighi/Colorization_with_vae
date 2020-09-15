@@ -97,7 +97,7 @@ def load_data(prop = 0.3):
 
     x_test = np.asarray(x_test)
     y_test = np.concatenate([x_test, y_test], axis=3)
-    y_test = [cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_Lab2BGR) for img in y_test]
+    y_test = [cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2Lab) for img in y_test]
     x_test = [img[:,:,0:1] for img in y_test]
 
     list_files = os.listdir('data/fruit/Training/colorization')
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     import os
     os.chdir('..')
     x_train, y_train, x_val, y_val, x_test, y_test, labels_train, labels_val = load_data(0.2)
-    model, encoder, generator, model_colorization = vae_model(latent_dim=64)
+    model, encoder, generator, model_colorization = vae_model(latent_dim=20)
     model, history, time_experiment = train(model=model, x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val)
     create_plots_paper(x_val=x_val, label_val=labels_val, model_colorization=model_colorization,
                        time_experiment=time_experiment, encoder= encoder, generator = generator)
